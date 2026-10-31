@@ -1,7 +1,7 @@
 from addict import Dict
-from aria_ros2 import config
-from aria_ros2.clock import ClockFit
-from aria_ros2.session import Session
+from aria_driver import config
+from aria_driver.clock import ClockFit
+from aria_driver.session import Session
 import numpy as np
 
 

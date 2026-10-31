@@ -5,7 +5,7 @@ from pathlib import Path
 import threading
 import uuid
 
-from aria_ros2 import config
+from aria_driver import config
 
 
 class Session:

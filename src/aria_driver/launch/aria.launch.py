@@ -10,10 +10,10 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    config = os.path.join(get_package_share_directory('aria_ros2'), 'config', 'aria.yaml')
+    config = os.path.join(get_package_share_directory('aria_driver'), 'config', 'aria.yaml')
     return LaunchDescription([
         DeclareLaunchArgument('config', default_value=config,
                               description='ROS parameter file of the aria node'),
-        Node(package='aria_ros2', executable='aria_node', name='aria', output='screen',
+        Node(package='aria_driver', executable='aria_node', name='aria', output='screen',
              parameters=[LaunchConfiguration('config')]),
     ])

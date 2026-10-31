@@ -67,6 +67,9 @@ class AriaGlasses:
             raise RuntimeError(f'No streaming cert in {CERTS_DIR}; run '
                                '`aria_gen2 streaming install-certs` once')
         streaming.streaming_cert_name = cert_name.read_text().strip()
+        if self.device.is_recording():
+            raise RuntimeError('The glasses are recording (aria_device record); '
+                               'stream once it finishes')
         if self.device.is_streaming():  # left over from a run that was killed
             self.device.stop_streaming()
         self.device.set_streaming_config(streaming)
@@ -91,10 +94,11 @@ class AriaGlasses:
         # Callbacks run until the server stops, but TicSync state dies with the stream.
         with self.lock:
             receiver, self.receiver = self.receiver, None
+        if receiver is None:  # the stream, if any, belongs to another process
+            return
         if self.device.is_streaming():
             self.device.stop_streaming()
-        if receiver is not None:
-            receiver.stop_server()
+        receiver.stop_server()
 
     def latency_ms(self, capture_ns):
         """Transport latency of one sample, or None until TicSync has synced the clocks.
@@ -139,6 +143,9 @@ class AriaGlasses:
         Returns:
             The recording's id, which download takes.
         """
+        if self.device.is_streaming():
+            raise RuntimeError('The glasses are streaming to an aria node; stop it, or call '
+                               '/aria/set_streaming with data: false, then record')
         recording = sdk.RecordingConfig()
         recording.recording_name, recording.profile_name = name, profile
         self.device.set_recording_config(recording)
@@ -156,7 +163,6 @@ class AriaGlasses:
         return output
 
     def disconnect(self):
+        # record() stops its own recording, so a recording here belongs to another process.
         self.stop_streaming()
-        if self.device.is_recording():
-            self.device.stop_recording()
         self.client.disconnect(self.device)

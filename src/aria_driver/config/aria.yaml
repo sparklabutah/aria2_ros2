@@ -1,5 +1,5 @@
 # Every setting of a run. Copy this file to change it, or override one key with
-# `ros2 run aria_ros2 aria_node --ros-args --params-file <file> -p stream.interface:=usb`.
+# `ros2 run aria_driver aria_node --ros-args --params-file <file> -p stream.interface:=usb`.
 aria:
   ros__parameters:
     device:
@@ -16,9 +16,10 @@ aria:
     gaze:
       depth: 1.0              # metres, used when the glasses report no gaze depth
     viewer:
-      enable: true            # show the streams in Meta's Rerun viewer, aria_streaming_viewer
+      enable: true           # show the streams in Meta's Rerun viewer, aria_streaming_viewer
       jpeg_quality: 50
       memory_limit: 4GB
     record:
       enable: true            # save config.yaml, vrs/ and clock.csv per streaming session
-      output_dir: data/aria
+      output_dir: data/sessions
+      video_dir: data/videos  # MP4 files from `ros2 run aria_driver to_mp4`

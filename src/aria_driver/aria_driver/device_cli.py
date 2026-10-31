@@ -6,12 +6,12 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 
-from aria_ros2 import config
-from aria_ros2.glasses import AriaGlasses
+from aria_driver import config
+from aria_driver.glasses import AriaGlasses
 
 
 def parse_args():
-    default = os.path.join(get_package_share_directory('aria_ros2'), 'config', 'aria.yaml')
+    default = os.path.join(get_package_share_directory('aria_driver'), 'config', 'aria.yaml')
     parser = argparse.ArgumentParser(
         description=__doc__,
         epilog='Trailing key=value pairs override the file, such as device.ip=10.0.0.5.')

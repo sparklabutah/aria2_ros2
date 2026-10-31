@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from aria_ros2 import config
+from aria_driver import config
 import pytest
 
 PARAMS = """

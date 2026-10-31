@@ -2,7 +2,7 @@ from glob import glob
 
 from setuptools import find_packages, setup
 
-package_name = 'aria_ros2'
+package_name = 'aria_driver'
 
 setup(
     name=package_name,
@@ -23,9 +23,10 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'aria_node = aria_ros2.aria_node:main',
-            'aria_device = aria_ros2.device_cli:main',
-            'tts_prompt = aria_ros2.tts_prompt:main',
+            'aria_node = aria_driver.aria_node:main',
+            'aria_device = aria_driver.device_cli:main',
+            'tts_prompt = aria_driver.tts_prompt:main',
+            'to_mp4 = aria_driver.to_mp4:main',
         ],
     },
 )

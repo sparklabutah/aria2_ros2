@@ -51,20 +51,24 @@ aria2_ros2/                       colcon workspace
 ├── requirements.txt              pip packages outside rosdep
 ├── src/
 │   ├── aria_msgs/msg/Audio.msg
-│   └── aria_ros2/
+│   └── aria_driver/
 │       ├── config/aria.yaml      every setting of a run
 │       ├── launch/aria.launch.py the aria node
-│       ├── aria_ros2/
+│       ├── aria_driver/
 │       │   ├── aria_node.py      the aria node and its Rerun viewer
 │       │   ├── glasses.py        Client SDK: connect, stream, record, TTS
 │       │   ├── messages.py       Aria samples to ROS messages
 │       │   ├── session.py        one folder per streaming session
 │       │   ├── clock.py          capture clock to host clock, offline
 │       │   ├── config.py         settings as a frozen addict Dict
+│       │   ├── to_mp4.py         session VRS recordings to MP4
 │       │   ├── tts_prompt.py     terminal lines to /aria/tts
 │       │   └── device_cli.py     aria_device: status, profiles, recordings
 │       └── test/
-└── data/aria/                    session folders
+└── data/
+    ├── sessions/                 one folder per streaming session
+    ├── videos/                   MP4 files from to_mp4
+    └── downloads/                recordings from aria_device download
 ```
 
 ## Run
@@ -84,7 +88,7 @@ aria2_ros2/                       colcon workspace
 3. Connect the glasses over USB with developer mode on, and check them:
 
    ```bash
-   ros2 run aria_ros2 aria_device info
+   ros2 run aria_driver aria_device info
    ```
 
 4. Let the glasses reach the receiver. They open a TLS connection to this host on port 6768
@@ -106,12 +110,12 @@ aria2_ros2/                       colcon workspace
 5. Start the aria node. The Rerun viewer opens with the ego video, gaze and audio:
 
    ```bash
-   ros2 launch aria_ros2 aria.launch.py
+   ros2 launch aria_driver aria.launch.py
    ```
 
-   Run settings live in `src/aria_ros2/config/aria.yaml`, and a copy runs with
+   Run settings live in `src/aria_driver/config/aria.yaml`, and a copy runs with
    `config:=$PWD/my_aria.yaml`. One key changes with
-   `ros2 run aria_ros2 aria_node --ros-args --params-file src/aria_ros2/config/aria.yaml -p stream.interface:=usb`.
+   `ros2 run aria_driver aria_node --ros-args --params-file src/aria_driver/config/aria.yaml -p stream.interface:=usb`.
    `viewer.enable:=false` runs without the viewer, for example on a headless machine.
 
 6. Check the topics:
@@ -124,7 +128,7 @@ aria2_ros2/                       colcon workspace
 7. Speak through the glasses from a terminal:
 
    ```bash
-   ros2 run aria_ros2 tts_prompt
+   ros2 run aria_driver tts_prompt
    ros2 topic pub --once /aria/tts std_msgs/msg/String "{data: 'Hello from ROS'}"
    ```
 
@@ -134,7 +138,7 @@ aria2_ros2/                       colcon workspace
    ros2 service call /aria/set_streaming std_srvs/srv/SetBool "{data: false}"
    ```
 
-9. Find the results. Each streaming session writes a new folder `data/aria/<UTC time>_<id>/`
+9. Find the results. Each streaming session writes a new folder `data/sessions/<UTC time>_<id>/`
    under the launch directory and never reuses one. `record.enable:=false` streams without saving.
 
    - `config.yaml`: the run's settings, a parameter file that starts the same run
@@ -144,19 +148,28 @@ aria2_ros2/                       colcon workspace
    Device capture times in the VRS map to host time with
 
    ```python
-   from aria_ros2.clock import ClockFit
+   from aria_driver.clock import ClockFit
 
-   fit = ClockFit('data/aria/<session>/clock.csv', 'rgb')
+   fit = ClockFit('data/sessions/<session>/clock.csv', 'rgb')
    host_ns = fit.map(capture_ns)
    ```
+
+10. Watch a session. Once its streaming has stopped, this converts its recordings to MP4 in
+    `data/videos/`, the newest session unless `--session` names one, and keeps MP4 files that
+    already exist. It needs `sudo apt install ffmpeg` once:
+
+    ```bash
+    ros2 run aria_driver to_mp4
+    ros2 run aria_driver to_mp4 --session <UTC time>_<id>
+    ```
 
 ## Glasses tools
 
 ```bash
-ros2 run aria_ros2 aria_device profiles
-ros2 run aria_ros2 aria_device recordings
-ros2 run aria_ros2 aria_device record --name trial_001 --seconds 20
-ros2 run aria_ros2 aria_device download <uuid> --output data/downloads
+ros2 run aria_driver aria_device profiles
+ros2 run aria_driver aria_device recordings
+ros2 run aria_driver aria_device record --name trial_001 --seconds 20
+ros2 run aria_driver aria_device download <uuid> --output data/downloads
 ```
 
 Each command reads the `device` block of the same parameter file and takes `key=value` overrides,
@@ -165,6 +178,6 @@ such as `device.ip=192.168.1.20`.
 ## Tests
 
 ```bash
-python -m colcon test --packages-select aria_ros2
+python -m colcon test --packages-select aria_driver
 python -m colcon test-result --verbose
 ```

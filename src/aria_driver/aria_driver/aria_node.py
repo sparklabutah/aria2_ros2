@@ -10,6 +10,7 @@ from aria_msgs.msg import Audio
 from geometry_msgs.msg import PointStamped
 import numpy as np
 import rclpy
+import rerun as rr
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
@@ -18,11 +19,23 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import String
 from std_srvs.srv import SetBool
 
-from aria_ros2 import config, messages
-from aria_ros2.glasses import AriaGlasses
-from aria_ros2.session import Session
+from aria_driver import config, messages
+from aria_driver.glasses import AriaGlasses
+from aria_driver.session import Session
 
+# Receiver stream name to viewer callback, for the streams that only the viewer draws.
+VIEWER_STREAMS = {'slam': 'image_callback', 'et': 'image_callback',
+                  'imu_batch': 'imu_batch_callback', 'barometer': 'barometer_callback',
+                  'magnetometer': 'magnetometer_callback', 'hand_pose': 'hand_pose_callback',
+                  'vio': 'vio_callback', 'vio_high_frequency': 'vio_high_frequency_callback'}
 SAMPLE_RATES = (8000, 16000, 22050, 24000, 32000, 44100, 48000, 96000)
+
+
+def patch_rerun_quaternion():
+    """rerun-sdk 0.23 passes copy= to np.asarray, which numpy 1.x rejects."""
+    def to_array(self, dtype=None, copy=None):
+        return np.asarray(self.xyzw, dtype=dtype)
+    rr.datatypes.Quaternion.__array__ = to_array
 
 
 class AriaNode(Node):
@@ -44,6 +57,7 @@ class AriaNode(Node):
             ip = self.glasses.use_wifi()
             where = f'over Wi-Fi at {ip}' if ip else 'over USB: they are not on Wi-Fi'
             self.get_logger().info(f'controlling the glasses {where}')
+        patch_rerun_quaternion()
         self.viewer = None
         self.calibrated = False
         if self.cfg.viewer.enable:
@@ -67,6 +81,9 @@ class AriaNode(Node):
         self.session = Session(self.cfg) if self.cfg.record.enable else None
         callbacks = {'rgb': self.on_rgb, 'eye_gaze': self.on_gaze, 'audio': self.on_audio,
                      'device_calib': self.on_calibration}
+        if self.viewer is not None:
+            for name, method in VIEWER_STREAMS.items():
+                callbacks[name] = self.viewer_only(getattr(self.viewer, method))
         vrs_path = self.session.vrs_path if self.session is not None else None
         self.glasses.start_streaming(self.cfg.stream, callbacks, vrs_path)
         if self.viewer is not None:
@@ -107,6 +124,13 @@ class AriaNode(Node):
         if session is not None:
             session.log_clock(stream, capture_ns, host_ns, latency_ms)
         return messages.to_time(host_ns - (0 if latency_ms is None else int(latency_ms * 1e6)))
+
+    def viewer_only(self, draw):
+        """Wrap a viewer callback so it runs once the calibration has arrived."""
+        def callback(*args):
+            if self.calibrated:
+                draw(*args)
+        return callback
 
     def on_calibration(self, device_calib):
         if self.viewer is not None:

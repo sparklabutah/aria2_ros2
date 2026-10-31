@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from aria_ros2 import messages
+from aria_driver import messages
 import numpy as np
 
 

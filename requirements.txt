@@ -1,6 +1,7 @@
 # Python packages outside rosdep. setup_env.sh adds the Aria wheels with --no-deps.
 addict==2.4.0
 colcon-common-extensions
+moviepy==2.2.1  # projectaria-tools' vrs_to_mp4 needs it; --no-deps leaves it out
 numpy==1.26.4
 rerun-sdk==0.23.1  # newest that runs on numpy 1.x, which ROS Humble needs
 termcolor>=2

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>aria_ros2</name>
+  <name>aria_driver</name>
   <version>0.2.0</version>
   <description>
     ROS 2 node for Project Aria Gen2 glasses: ego video, eye gaze, microphones, onboard TTS,
@@ -11,6 +11,7 @@
 
   <exec_depend>ament_index_python</exec_depend>
   <exec_depend>aria_msgs</exec_depend>
+  <exec_depend>ffmpeg</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
